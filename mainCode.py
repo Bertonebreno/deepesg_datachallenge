@@ -1,3 +1,5 @@
+import sys
+import time
 import numpy as np
 import pandas as pd
 
@@ -50,11 +52,12 @@ def getAccountValues(chart_of_accounts, account_transactions):
             parent_index = int(parent_nodes[i])
             account_values[parent_index] += account_values[i]
 
-    #chart_and_values = pd.DataFrame({"account": chart_of_accounts_ar, "total_transactions": account_values})
-    return account_values#, chart_and_values
+    chart_and_values = pd.DataFrame({"account": chart_of_accounts_ar, "total_transactions": account_values})
+    return account_values, chart_and_values
 
 
 if __name__ == '__main__':
+    a = time.time()
     try:
         chart_of_accounts = pd.read_excel(r"input/chart_of_accounts.xlsx")
         chart_of_accounts = chart_of_accounts.iloc[:,0] 
@@ -68,5 +71,6 @@ if __name__ == '__main__':
 
     account_transactions = getTotalTransaction(general_ledger)
     account_values, chart_and_values = getAccountValues(chart_of_accounts, account_transactions)
+    print(time.time()-a)
     print(account_values)
     chart_and_values.to_excel("output/output.xlsx")

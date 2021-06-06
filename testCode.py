@@ -1,5 +1,5 @@
+import sys
 import numpy as np
-from numpy.core.numeric import allclose
 import pandas as pd
 import time
 import mainCode
@@ -24,15 +24,16 @@ def createChartOfAccounts(number_of_accounts):
         action = np.random.randint(0, 3) # 0 -> goes back a level // 1 -> keeps the level // 2 -> increases the level
         
         if (action == 0):
-            if (len(current_parent) == 1):
+            if (len(current_parent) == 1):     # The current parent is a root, the next parent is also a root
                 is_root[i] = 1
                 current_parent[-1] = i
-            elif (len(current_parent) == 2):
+            elif (len(current_parent) == 2):   # The current parent is not a root, but the next one is
                 is_root[i] = 1
                 current_parent.pop()
-            else:
+            else:                              # Neither the current nor the next parent are root nodes
                 current_parent.pop()
                 child_list[current_parent[-1]].append(i)
+
             if (len(levels) > 1):
                 levels.pop()
             levels[-1] += 1
@@ -79,10 +80,10 @@ def createGeneralLedge(chart_of_accounts, is_root, child_list):
 
 
 
-def testFunction():
+def testFunction(max_number_of_accounts):
     start_time = time.time()
 
-    number_of_accounts = 100000 #np.random.randint(10000, 100000)
+    number_of_accounts = np.random.randint(1, max_number_of_accounts)
     random_chart, is_root, child = createChartOfAccounts(number_of_accounts)
     random_ledge, value = createGeneralLedge(random_chart, is_root, child)
 
@@ -92,22 +93,32 @@ def testFunction():
 
     account_transactions = mainCode.getTotalTransaction(random_ledge)
     random_chart = pd.DataFrame(random_chart)
-    new_value = mainCode.getAccountValues(random_chart, account_transactions)
+    new_value, chart = mainCode.getAccountValues(random_chart, account_transactions)
 
     calculation_time = time.time() - start_time
 
-    answer = np.allclose(value, new_value)
+    answer = np.allclose(value, new_value)  # using np.allclose to avoid differences caused by floating point calculations
 
     return answer, creation_time, calculation_time
 
-a = []
-t1 = 0
-t2 = 0
-for i in range(10):
-    print(i)
-    x, y, z = testFunction()
-    a.append(x)
-    t1 += y
-    t2 += z
 
-print(a, t1/10, t2/10)
+
+
+if __name__ == "__main__":
+    try:
+        number_of_times = int(sys.argv[1])
+        max_number_of_accounts = int(sys.argv[2])
+    except:
+        print("Not enough arguments")
+
+    solutions = []
+    creation_time = 0
+    calculation_time = 0
+    for i in range(number_of_times):
+        print(i)
+        this_solution, this_creation_time, this_calculation_time = testFunction(max_number_of_accounts)
+        solutions.append(this_solution)
+        creation_time += this_creation_time
+        calculation_time += this_calculation_time
+
+    print(np.all(solutions), creation_time/number_of_times, calculation_time/number_of_times)
