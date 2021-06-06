@@ -1,5 +1,4 @@
 import sys
-import time
 import numpy as np
 import pandas as pd
 
@@ -10,6 +9,7 @@ def getTotalTransaction(general_ledger):
     return account_transactions
 
 def getAccountValues(chart_of_accounts, account_transactions):
+    chart_of_accounts = chart_of_accounts.iloc[:,0] 
     number_of_accounts = len(chart_of_accounts.index)
 
     chart_of_accounts_ar = chart_of_accounts.to_numpy().reshape(number_of_accounts)
@@ -20,8 +20,8 @@ def getAccountValues(chart_of_accounts, account_transactions):
                                                     #account tree. The value -1 means it is a root node
 
 
-    # We will go through all accounts, check if they have any child accounts, if they have we will 
-    #store this information, if not, we will save its account value
+    # We will go through all accounts, save its account value, and then check if they have any a parent account, 
+    #if they have we will store this information
     for i in range(number_of_accounts): 
         account_number = chart_of_accounts_ar[i]
 
@@ -30,7 +30,7 @@ def getAccountValues(chart_of_accounts, account_transactions):
         except:
             pass                                                                           
 
-        if (parent_nodes[i] == -1 and i > 0): # Let's find for its parent (if it has one)
+        if (parent_nodes[i] == -1 and i > 0): # Let's find its parent (if it has one)
             current_possible_parent = i - 1   # This will check if the previous account is the parent
             while True:
                 if(chart_of_accounts_ar[int(current_possible_parent)] in account_number):  #Found a parent!
@@ -49,28 +49,39 @@ def getAccountValues(chart_of_accounts, account_transactions):
     for i in range(number_of_accounts-1, -1, -1):
 
         if (parent_nodes[i] != -1):
-            parent_index = int(parent_nodes[i])
-            account_values[parent_index] += account_values[i]
+            account_values[int(parent_nodes[i])] += account_values[i]
 
     chart_and_values = pd.DataFrame({"account": chart_of_accounts_ar, "total_transactions": account_values})
     return account_values, chart_and_values
 
 
 if __name__ == '__main__':
-    a = time.time()
     try:
-        chart_of_accounts = pd.read_excel(r"input/chart_of_accounts.xlsx")
-        chart_of_accounts = chart_of_accounts.iloc[:,0] 
+        chart_of_accounts_path = sys.argv[1]
+        chart_of_accounts = pd.read_excel(chart_of_accounts_path)
     except:
         print("Could not read the chart of accounts")
+        sys.exit()
 
     try:
-        general_ledger = pd.read_excel(r"input/general_ledger.xlsx")
+        general_ledger_path = sys.argv[2]
+        general_ledger = pd.read_excel(general_ledger_path)
     except:
         print("Could not read the general ledger")
+        sys.exit()
+
+    try:
+        output_path = sys.argv[3]
+    except:
+        print("Could not get to the output path")
+        sys.exit()
 
     account_transactions = getTotalTransaction(general_ledger)
     account_values, chart_and_values = getAccountValues(chart_of_accounts, account_transactions)
-    print(time.time()-a)
+
     print(account_values)
-    chart_and_values.to_excel("output/output.xlsx")
+    try:
+        chart_and_values.to_excel(output_path)
+    except:
+        print(chart_and_values)
+        print("Could not write the solution to the output path")
